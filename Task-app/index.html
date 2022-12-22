@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" >
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"  referrerpolicy="no-referrer" />
+    <style>
+        .gorev{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .gorev label.checked{
+            text-decoration: line-through;
+        }
+        .card-second-control{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-second-control span{
+            margin: 0px 6px;
+            cursor: pointer;
+        }
+
+        .card-second-control span.active{
+            color: #3c87ff;
+        }
+    </style>
+
+</head>
+<body>
+ <div class="container">
+    <div class="row-12">
+        <div class="card first-card">
+            <div class="card-header h5 text-center ">Todo App</div>
+            <div class="card-body">
+                <form>
+                    <div class="input-group">
+                        <input type="text" id="yeniGorevYazisi" class="form-control">
+                        <button type="submit" class="btn btn-primary" id="yeniGorevEkleme">Ekle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="card second-card mt-3">
+            <div class="card-header card-second-control">
+                
+                <div class="filtres">
+                    <span class="active" id="all">Hepsi</span>
+                    <span  id="pending">Yapılcaklar</span>
+                    <span  id="completed">Tamamlananlar</span>
+                </div>
+                <button type="submit" class="btn btn-danger btn-sm float-end hepsini-sil">Hepsini Temizle</button>
+            </div>
+           
+                <ul class="gorev-listesi list-group list-group-flush">
+                    
+                    
+                </ul>
+           
+
+        </div>
+    </div>
+ </div>    
+
+
+
+<script>
+ let gorevListesi = [];
+    
+ if(localStorage.getItem("gorevListesi") !== null){
+            gorevListesi = JSON.parse(localStorage.getItem("gorevListesi"));
+    }
+
+ const eklencekGorev = document.querySelector("#yeniGorevYazisi");
+ const filtres = document.querySelectorAll(".filtres span");
+ let editvar = false ;
+ let editId;
+
+ gorevleriCagirma("all");
+ function gorevleriCagirma(filter){
+
+    
+    let ul = document.querySelector(".gorev-listesi");
+    ul.innerHTML = "";
+    if(gorevListesi.length==0){
+                ul.innerHTML="<p class='p-3 m-0'>Görev Listeniz boş.</p>"
+    }
+    for(let gorev of gorevListesi){
+        
+        let  completed = gorev.durum == "completed" ? "checked" : "";
+        if(filter == gorev.durum || filter == "all"){
+            let li =  `
+                <li class="gorev list-group-item">
+                    <div class="form-check" >
+                        <input type="checkbox" id="${gorev.id}" class="form-check-input "
+                        onclick="durumGuncelleme(this)" ${completed}>
+                        <label for="${gorev.id} " class="form-check-label ${completed}">${gorev.gorevAdi}</label>
+                    </div>
+                    <div class="dropdown">
+                            <button class="btn btn-warning dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                            Düzenle
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                            <li><a onclick="gorevSilmeFonk(${gorev.id})" class="dropdown-item " href="#"><i class="fa-solid fa-trash me-1"></i>Silme</a></li>
+                            <li><a onclick="gorevGuncelleme(${gorev.id},'${gorev.gorevAdi}')"   class="dropdown-item" href="#"><i class="fa-solid fa-pencil me-1"></i>Değiştir</a></li>
+                            
+                        </ul>
+                    </div>
+                </li>
+            `;
+
+            ul.insertAdjacentHTML("beforeend",li)
+       
+        }
+            
+
+    }
+}
+
+
+    for(let span of filtres){
+            span.addEventListener("click",function(){
+                document.querySelector("span.active").classList.remove("active");
+                span.classList.add("active");
+                gorevleriCagirma(span.id);
+                
+            })
+        }
+
+
+
+ document.querySelector("#yeniGorevEkleme").addEventListener("click",gorevEklemeFonk); 
+ function gorevEklemeFonk(){
+    
+    
+    if(eklencekGorev.value == ""){
+        alert("lütfen görev giriniz.")
+    }else{
+        
+        if(editvar == false){
+            gorevListesi.push({"id" : gorevListesi.length + 1 , "gorevAdi" : eklencekGorev.value,"durum" : "pending"});
+            eklencekGorev.value = "";
+            gorevleriCagirma();
+        }else{
+           for(let gorev of gorevListesi){
+                if(gorev.id == editId){
+                    gorev.gorevAdi = eklencekGorev.value;
+                }
+                editvar = false;
+           }
+        }
+        eklencekGorev.value = "";
+       
+        gorevleriCagirma(document.querySelector("span.active").id);
+        localStorage.setItem("gorevListesi",JSON.stringify(gorevListesi));
+    }
+
+    event.preventDefault();
+ }
+ 
+ function gorevSilmeFonk(id){
+    let silincekId;
+    for(let index in gorevListesi){
+        if(gorevListesi[index].id == id ){
+            silincekId = index;
+        }
+    }
+    gorevListesi.splice(silincekId,1);
+    
+    
+    gorevleriCagirma(document.querySelector("span.active").id);
+    localStorage.setItem("gorevListesi",JSON.stringify(gorevListesi));
+}
+ 
+ function gorevGuncelleme(id,gorevAdi){
+
+    editvar = true;
+    editId = id;
+    eklencekGorev.value = gorevAdi;
+    eklencekGorev.focus();
+    eklencekGorev.classList.add("active");
+ }
+ 
+ document.querySelector(".hepsini-sil").addEventListener("click",hepsiniSilme);
+ function hepsiniSilme(){
+    gorevListesi.splice(0,gorevListesi.length);
+    
+    gorevleriCagirma();
+    localStorage.setItem("gorevListesi",JSON.stringify(gorevListesi));
+ }
+ 
+ function durumGuncelleme(selectedTask){
+    let label = selectedTask.nextElementSibling;
+    let durum;
+
+    if(selectedTask.checked){
+        label.classList.add("checked");
+        durum = "completed";
+    }else{
+        label.classList.remove("checked");
+        durum = "pending"
+    }
+    for(let gorev of gorevListesi){
+                if(gorev.id == selectedTask.id){
+                    gorev.durum = durum;
+                }
+    }
+    
+  
+    
+    gorevleriCagirma(document.querySelector("span.active").id);
+    localStorage.setItem("gorevListesi",JSON.stringify(gorevListesi));
+ }
+ 
+ 
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
